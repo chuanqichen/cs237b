@@ -28,7 +28,11 @@ def value_iteration(problem, reward, terminal_mask, gam):
 
         # compute the next value function estimate for the iteration
         # compute err = tf.linalg.norm(V_new - V_prev) as a breaking condition
-
+        V_prev = V
+        Q = reward + gam*tf.einsum('ans,s->na', tf.convert_to_tensor(Ts), V)
+        terminal_masks = tf.tile(tf.reshape(tf.cast(terminal_mask, bool), [sdim, 1]), [1, adim])
+        V = tf.reduce_max(tf.where(terminal_masks, reward, Q), axis=1) # reduce by maxing over action
+        err = tf.linalg.norm(V - V_prev)
         ######### Your code ends here ###########
 
         if err < 1e-7:
