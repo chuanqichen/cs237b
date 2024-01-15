@@ -52,13 +52,14 @@ def calculate_optimal_policy(problem, reward, gam, V_opt):
 
 def visualize_policy_function(V, Policy):
     """
-    Visualizes the value function given in V & computes the optimal action,
+    Visualizes the optimal policy function,
     visualized as an arrow.
 
     You need to call plt.show() yourself.
 
     Args:
         V: (np.array) the value function reshaped into a 2D array.
+        Policy: (np.array) the value function reshaped into a 2D array.
     """
     V = np.array(V)
     assert V.ndim == 2
@@ -81,9 +82,26 @@ def visualize_policy_function(V, Policy):
         v.append(next_pts[idx][1] - pt[1])
     u, v = np.reshape(u, (m, n)), np.reshape(v, (m, n))
 
-    plt.imshow(V.T, origin="lower")
-    plt.quiver(X, Y, u, v, pivot="middle")
+    N = 100
+    traj_x, traj_y = [], []
+    pt = [0, 0]
+    pt_min, pt_max = [0, 0], [m - 1, n - 1]
+    traj_x.append(pt[0])
+    traj_y.append(pt[1])
+    for i in range(N):
+        pt_right = np.clip(np.array(pt) + np.array([1, 0]), pt_min, pt_max)
+        pt_up = np.clip(np.array(pt) + np.array([0, 1]), pt_min, pt_max)
+        pt_left = np.clip(np.array(pt) + np.array([-1, 0]), pt_min, pt_max)
+        pt_down = np.clip(np.array(pt) + np.array([0, -1]), pt_min, pt_max)
+        next_pts = [pt_right, pt_up, pt_left, pt_down]
+        idx = Policy[pt[0], pt[1]]
+        traj_x.append(next_pts[idx][0])
+        traj_y.append(next_pts[idx][1])
+        pt = next_pts[idx]
 
+    plt.imshow(Policy.T, origin="lower")
+    plt.quiver(X, Y, u, v, pivot="middle")
+    plt.plot(traj_x, traj_y, 'r--')
 
 
 # value iteration ##############################################################
