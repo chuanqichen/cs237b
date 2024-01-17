@@ -36,7 +36,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
 
         # make sure to account for the reward, the terminal state and the
         # discount factor gam
-
+        NotImplemented
         ######### Your code ends here ###########
 
         # need to regularize the Q-value, because we're training its difference
@@ -55,7 +55,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
         ######### Your code starts here #########
         # apply a single step of gradient descent to the Q_network variables
         # take a look at the tf.keras.optimizers
-
+        NotImplemented
 
         ######### Your code ends here ###########
 
@@ -97,6 +97,10 @@ def main():
             # remember that tf.random.categorical takes in the log of
             # probabilities, not the probabilities themselves
 
+            #xp = tf.random.categorical(tf.expand_dims(tf.math.log(Ts[u][x]), 0), 1)
+            xp = tf.random.categorical(tf.expand_dims(tf.math.log(
+                tf.tensordot(tf.one_hot(x, sdim), Ts[u], 1)), 0), 1)
+            #tf.linalg.matvec(Ts[u], tf.one_hot(x, sdim)).shape
             ######### Your code ends here ###########
 
             # convert integer states to a 2D representation using idx2pos
@@ -126,7 +130,13 @@ def main():
     # it needs to take in 2 state + 1 action input (3 inputs)
     # it needs to output a single value (batch x 1 output) - the Q-value
     # it should have 3 dense layers with a width of 64 (two hidden 64 neuron embeddings)
-
+    Q_network = tf.keras.Sequential(
+        tf.keras.Input(shape=(3,)),
+        tf.keras.layers.Dense(64, activation='relu'),
+        tf.keras.layers.Dense(64, activation='relu'),
+        tf.keras.layers.Dense(64, activation='relu'),
+        tf.keras.layers.Dense(3)
+    )
     ######### Your code ends here ###########
 
     # train the Q-network ##################################
