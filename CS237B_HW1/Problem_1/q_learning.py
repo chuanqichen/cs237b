@@ -134,8 +134,7 @@ def main():
         tf.keras.Input(shape=(3,)),
         tf.keras.layers.Dense(64, activation='relu'),
         tf.keras.layers.Dense(64, activation='relu'),
-        tf.keras.layers.Dense(64, activation='relu'),
-        tf.keras.layers.Dense(3)
+        tf.keras.layers.Dense(1)
     )
     ######### Your code ends here ###########
 
