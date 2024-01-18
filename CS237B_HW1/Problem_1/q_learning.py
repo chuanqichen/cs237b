@@ -11,7 +11,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
     assert X.ndim == 2 and U.ndim == 2 and Xp.ndim == 2
     sdim, adim = X.shape[-1], U.shape[-1]
 
-    @tf.function
+    #@tf.function
     def loss():
         batch_n = int(1e4)
         ridx = tf.random.uniform([batch_n], 0, X.shape[0], dtype=tf.int32)
@@ -36,7 +36,12 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
 
         # make sure to account for the reward, the terminal state and the
         # discount factor gam
-        NotImplemented
+        if is_terminal_fn:
+            Q_target = reward_fn(Xp_all, U_all)    
+        else:
+            Q_target = reward_fn(Xp_all, U_all) + gam * next_Q 
+        Q_target = tf.reduce_max(tf.reshape(Q_target, (-1, 4)), axis=-1)
+        l = tf.reduce_sum(tf.square(Q_target-Q))
         ######### Your code ends here ###########
 
         # need to regularize the Q-value, because we're training its difference
@@ -55,8 +60,17 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
         ######### Your code starts here #########
         # apply a single step of gradient descent to the Q_network variables
         # take a look at the tf.keras.optimizers
-        NotImplemented
+        with tf.GradientTape() as tape:
+            opt = tf.keras.optimizers.Adam(learning_rate=0.01)
+            #Q_network.compile(loss='categorical_crossentropy', optimizer=opt)
+                        
+            loss_value = loss()
 
+            # Compute gradients
+            grads = tape.gradient(loss_value, Q_network.trainable_variables)
+
+            # Apply gradients to update network weights
+            opt.apply_gradients(zip(grads, Q_network.trainable_variables))        
         ######### Your code ends here ###########
 
 
@@ -130,12 +144,11 @@ def main():
     # it needs to take in 2 state + 1 action input (3 inputs)
     # it needs to output a single value (batch x 1 output) - the Q-value
     # it should have 3 dense layers with a width of 64 (two hidden 64 neuron embeddings)
-    Q_network = tf.keras.Sequential(
-        tf.keras.Input(shape=(3,)),
-        tf.keras.layers.Dense(64, activation='relu'),
-        tf.keras.layers.Dense(64, activation='relu'),
-        tf.keras.layers.Dense(1)
-    )
+    Q_network = tf.keras.Sequential()
+    Q_network.add(tf.keras.Input(shape=(3,)))
+    Q_network.add(tf.keras.layers.Dense(64, activation='relu'))
+    Q_network.add(tf.keras.layers.Dense(64, activation='relu'))
+    Q_network.add(tf.keras.layers.Dense(1))
     ######### Your code ends here ###########
 
     # train the Q-network ##################################
