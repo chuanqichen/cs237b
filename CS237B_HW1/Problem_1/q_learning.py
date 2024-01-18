@@ -145,9 +145,9 @@ def main():
     # it should have 3 dense layers with a width of 64 (two hidden 64 neuron embeddings)
     Q_network = tf.keras.Sequential()
     Q_network.add(tf.keras.Input(shape=(3,)))
-    Q_network.add(tf.keras.layers.Dense(64, activation='relu'))
-    Q_network.add(tf.keras.layers.Dense(64, activation='relu'))
-    Q_network.add(tf.keras.layers.Dense(1))
+    Q_network.add(tf.keras.layers.Dense(64, activation='relu', kernel_initializer=tf.initializers.he_normal()))
+    Q_network.add(tf.keras.layers.Dense(64, activation='relu', kernel_initializer=tf.initializers.he_normal()))
+    Q_network.add(tf.keras.layers.Dense(1, activation="linear", kernel_initializer=tf.initializers.Zeros(),))
     ######### Your code ends here ###########
 
     # train the Q-network ##################################
