@@ -50,7 +50,7 @@ def calculate_optimal_policy(problem, reward, gam, V_opt):
     Policy_opt = tf.argmax(Q, axis=1)
     return Policy_opt
 
-def visualize_policy_function(V, Policy):
+def visualize_policy_function(problem, terminal_mask, V, Policy):
     """
     Visualizes the optimal policy function,
     visualized as an arrow.
@@ -61,6 +61,8 @@ def visualize_policy_function(V, Policy):
         V: (np.array) the value function reshaped into a 2D array.
         Policy: (np.array) the value function reshaped into a 2D array.
     """
+    Ts = problem["Ts"]
+    sdim, adim = Ts[0].shape[-1], len(Ts)  # state and action dimension
     V = np.array(V)
     assert V.ndim == 2
     m, n = V.shape
@@ -89,19 +91,19 @@ def visualize_policy_function(V, Policy):
     traj_x.append(pt[0])
     traj_y.append(pt[1])
     for i in range(N):
-        pt_right = np.clip(np.array(pt) + np.array([1, 0]), pt_min, pt_max)
-        pt_up = np.clip(np.array(pt) + np.array([0, 1]), pt_min, pt_max)
-        pt_left = np.clip(np.array(pt) + np.array([-1, 0]), pt_min, pt_max)
-        pt_down = np.clip(np.array(pt) + np.array([0, -1]), pt_min, pt_max)
-        next_pts = [pt_right, pt_up, pt_left, pt_down]
-        idx = Policy[pt[0], pt[1]]
-        traj_x.append(next_pts[idx][0])
-        traj_y.append(next_pts[idx][1])
-        pt = next_pts[idx]
+        action = Policy[pt[0], pt[1]]
+        xp = tf.random.categorical(tf.expand_dims(tf.math.log(
+            tf.tensordot(tf.one_hot(problem["pos2idx"][pt[0], pt[1]], sdim), Ts[action], 1)), 0), 1)
+        pt = problem["idx2pos"][xp].flatten()
+        traj_x.append(pt[0])
+        traj_y.append(pt[1])
+        #pt = next_pts[idx]
+        if (terminal_mask[problem["pos2idx"][pt[0], pt[1]]]==1):
+            break
 
     plt.imshow(Policy.T, origin="lower")
     plt.quiver(X, Y, u, v, pivot="middle")
-    plt.plot(traj_x, traj_y, 'r--')
+    plt.plot(traj_x, traj_y, 'r-.')
 
 
 # value iteration ##############################################################
@@ -131,7 +133,7 @@ def main():
 
     Policy_opt = calculate_optimal_policy(problem, reward, gam, V_opt)
     plt.figure(215)
-    visualize_policy_function(np.array(V_opt).reshape((n, n)), np.array(Policy_opt).reshape((n, n)))
+    visualize_policy_function(problem, terminal_mask, np.array(V_opt).reshape((n, n)), np.array(Policy_opt).reshape((n, n)))
     plt.title("Optimal Policy")
     plt.show()
 

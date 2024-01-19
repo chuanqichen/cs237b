@@ -24,7 +24,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
         U_all = tf.reshape(U_all, (-1, 1))
         Xp_all = tf.reshape(Xp_all, (-1, sdim))
         input = tf.concat([Xp_all, U_all], -1)
-        next_Q = tf.reduce_max(tf.reshape(Q_network(input), (-1, 4)), -1)
+        next_Q = tf.reduce_max(tf.reshape(tf.stop_gradient(Q_network(input)), (-1, 4)), -1)
         input = tf.concat([X_, U_], -1)
         Q = tf.reshape(Q_network(input), [-1])
 
@@ -40,7 +40,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
             Q_target = reward_fn(X_, U_)    
         else:
             Q_target = reward_fn(X_, U_) + gam * next_Q 
-        l = tf.reduce_sum(tf.square(Q_target-Q))
+        l = tf.reduce_mean(tf.square(Q_target-Q))
         ######### Your code ends here ###########
 
         # need to regularize the Q-value, because we're training its difference
@@ -147,6 +147,7 @@ def main():
     Q_network.add(tf.keras.Input(shape=(3,)))
     Q_network.add(tf.keras.layers.Dense(64, activation='relu', kernel_initializer=tf.initializers.he_normal()))
     Q_network.add(tf.keras.layers.Dense(64, activation='relu', kernel_initializer=tf.initializers.he_normal()))
+    Q_network.add(tf.keras.layers.Dense(64, activation='relu', kernel_initializer=tf.initializers.he_normal()))
     Q_network.add(tf.keras.layers.Dense(1, activation="linear", kernel_initializer=tf.initializers.Zeros(),))
     ######### Your code ends here ###########
 
@@ -178,6 +179,7 @@ def main():
     plt.figure(120)
     visualize_value_function(V.numpy().reshape((n, n)))
     plt.colorbar()
+    plt.savefig("ql_120.png")
     plt.show()
     ########################################################
 
