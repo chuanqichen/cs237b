@@ -3,15 +3,16 @@ import os, sys, pdb, math, pickle, time
 import matplotlib
 import tensorflow as tf, numpy as np, matplotlib.pyplot as plt
 from tqdm import tqdm
+import platform
 
 from utils import map_chunked, generate_problem, visualize_value_function
-import platform
+
 
 def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
     assert X.ndim == 2 and U.ndim == 2 and Xp.ndim == 2
     sdim, adim = X.shape[-1], U.shape[-1]
 
-    #@tf.function
+    @tf.function
     def loss():
         batch_n = int(1e4)
         ridx = tf.random.uniform([batch_n], 0, X.shape[0], dtype=tf.int32)
@@ -24,7 +25,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
         U_all = tf.reshape(U_all, (-1, 1))
         Xp_all = tf.reshape(Xp_all, (-1, sdim))
         input = tf.concat([Xp_all, U_all], -1)
-        next_Q = tf.reduce_max(tf.reshape(tf.stop_gradient(Q_network(input)), (-1, 4)), -1)
+        next_Q = tf.reduce_max(tf.reshape(Q_network(input), (-1, 4)), -1)
         input = tf.concat([X_, U_], -1)
         Q = tf.reshape(Q_network(input), [-1])
 
@@ -41,6 +42,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
         else:
             Q_target = reward_fn(X_, U_) + gam * next_Q 
         l = tf.reduce_mean(tf.square(Q_target-Q))
+
         ######### Your code ends here ###########
 
         # need to regularize the Q-value, because we're training its difference
@@ -56,6 +58,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
     else:
         opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
+
     ######### Your code ends here ###########
 
     print("Training the Q-network")
@@ -63,13 +66,10 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
         ######### Your code starts here #########
         # apply a single step of gradient descent to the Q_network variables
         # take a look at the tf.keras.optimizers
-        with tf.GradientTape() as tape:
-            loss_value = loss()
-            # Compute gradients
-            grads = tape.gradient(loss_value, Q_network.trainable_variables)
+        opt.minimize(loss, Q_network.trainable_variables)
 
-            # Apply gradients to update network weights
-            opt.apply_gradients(zip(grads, Q_network.trainable_variables))        
+
+
         ######### Your code ends here ###########
 
 
@@ -113,7 +113,7 @@ def main():
             #xp = tf.random.categorical(tf.expand_dims(tf.math.log(Ts[u][x]), 0), 1)
             xp = tf.random.categorical(tf.expand_dims(tf.math.log(
                 tf.tensordot(tf.one_hot(x, sdim), Ts[u], 1)), 0), 1)
-            #tf.linalg.matvec(Ts[u], tf.one_hot(x, sdim)).shape
+
             ######### Your code ends here ###########
 
             # convert integer states to a 2D representation using idx2pos
@@ -145,10 +145,10 @@ def main():
     # it should have 3 dense layers with a width of 64 (two hidden 64 neuron embeddings)
     Q_network = tf.keras.Sequential()
     Q_network.add(tf.keras.Input(shape=(3,)))
-    Q_network.add(tf.keras.layers.Dense(64, activation='relu', kernel_initializer=tf.initializers.he_normal()))
-    Q_network.add(tf.keras.layers.Dense(64, activation='relu', kernel_initializer=tf.initializers.he_normal()))
-    Q_network.add(tf.keras.layers.Dense(64, activation='relu', kernel_initializer=tf.initializers.he_normal()))
-    Q_network.add(tf.keras.layers.Dense(1, activation="linear", kernel_initializer=tf.initializers.Zeros(),))
+    Q_network.add(tf.keras.layers.Dense(64, activation='relu'))
+    Q_network.add(tf.keras.layers.Dense(64, activation='relu'))
+    Q_network.add(tf.keras.layers.Dense(1))
+
     ######### Your code ends here ###########
 
     # train the Q-network ##################################
