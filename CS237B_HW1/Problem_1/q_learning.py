@@ -110,9 +110,9 @@ def main():
             # remember that tf.random.categorical takes in the log of
             # probabilities, not the probabilities themselves
 
-            #xp = tf.random.categorical(tf.expand_dims(tf.math.log(Ts[u][x]), 0), 1)
-            xp = tf.random.categorical(tf.expand_dims(tf.math.log(
-                tf.tensordot(tf.one_hot(x, sdim), Ts[u], 1)), 0), 1)
+            xp = tf.random.categorical(tf.expand_dims(tf.math.log(Ts[u][x]), 0), 1)
+            #xp = tf.random.categorical(tf.expand_dims(tf.math.log(
+            #    tf.tensordot(tf.one_hot(x, sdim), Ts[u], 1)), 0), 1)
 
             ######### Your code ends here ###########
 
