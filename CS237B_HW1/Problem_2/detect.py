@@ -7,6 +7,7 @@ from utils import (
     normalize_resize_image,
     LABELS,
     maybe_makedirs,
+    normalize_image2
 )
 
 
@@ -28,13 +29,31 @@ def compute_brute_force_classification(model, image_path, nH=8, nW=8):
             Similarly predict will return a [1, 3] array which you might want to squeeze into a [3] array
     """
 
-    # H x W x 3 numpy array (3 for each RGB color channel)
+    # H x W x 3 numpy array (3 for each RGB color channel)    
     raw_image = decode_jpeg(image_path).numpy()
 
     ######### Your code starts here #########
+    H, W, _ = raw_image.shape
+    h = (int)(H/nH)
+    w = (int)(W/nW)
 
+    P = 1 # padding 
+    probs = []
+    for i in range(nH):
+        prob_row = []
+        si = max(0, i*h-P)
+        ei = min(H-1, (i+1)*h+P)
+        for j in range(nW):
+            sj = max(0, j*w-P)
+            ej = min(W-1, (j+1)*w+P)
+            window = raw_image[si:ei, sj:ej, :]
+            window = tf.expand_dims(normalize_resize_image(window, IMG_SIZE), 0)
+            prediction = tf.squeeze(model(window))
+            prediction = tf.nn.sigmoid(prediction)
+            prob_row.append(prediction)
+        probs.append(prob_row)
 
-
+    window_predictions = np.array(probs)
 
     ######### Your code ends here #########
 
@@ -57,16 +76,25 @@ def compute_convolutional_KxK_classification(model, image_path):
     ######### Your code starts here #########
 
     # We want to use the output of the last convolution layer which has the shape [bs, K, K, bottleneck_size]
+    out = conv_model(tf.expand_dims(resized_patch,0))
 
     # First calculate K
+    bs, K, _, bottleneck_size = out.shape
 
     # Next create a intermediate input structure which takes in a bottleneck tensor (int_input)
+    int_input = tf.keras.layers.InputLayer(bottleneck_size)
 
     # Create the classifier model which takes in the bottleneck tensor and outputs the class probabilities
     # Note: you must reuse the weights (layers) from the trained model as well as the int_input
+    linear_classifer = model.get_layer("classifier")
+    classifer_model = tf.keras.Sequential([
+        conv_model,
+        int_input,
+        linear_classifer
+    ])
 
     # Predict the ouput of the convolution layer using conv_model
-
+    predictionsKxK = classifer_model(tf.expand_dims(resized_patch,0))
     # Reshape so that patches become batches and predict
     ######### Your code ends here #########
 
@@ -90,10 +118,15 @@ def compute_and_plot_saliency(model, image_path):
     logits_tensor = model.get_layer("classifier")
     logits_model = tf.keras.Model(model.input, logits_tensor.output)
 
-    with tf.GradientTape() as t:
+    with tf.GradientTape(watch_accessed_variables=False) as t:
         ######### Your code starts here #########
-
-
+        input_image = tf.expand_dims(normalize_resize_image(raw_image, IMG_SIZE), 0)
+        t.watch(input_image) 
+        predictions = logits_model(input_image)
+        top_class = tf.argmax(tf.reshape(predictions, (-1)))    
+        top_score = predictions[0, top_class]
+        grad = t.gradient(top_score, input_image)
+        M = normalize_image2(grad[0])
 
         ######### Your code ends here #########
 
@@ -134,8 +167,8 @@ def plot_classification(image_path, classification_array):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image", type=str)
-    parser.add_argument("--scheme", type=str)
+    parser.add_argument("--image", type=str, default="./datasets/catswithdogs/002034.jpg")
+    parser.add_argument("--scheme", type=str, default="conv")
     FLAGS, _ = parser.parse_known_args()
     maybe_makedirs("../plots")
 

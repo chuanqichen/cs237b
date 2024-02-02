@@ -43,3 +43,8 @@ def normalize_resize_image(image, img_size):
 image_generator = tf.keras.preprocessing.image.ImageDataGenerator(
     preprocessing_function=normalize_image
 )
+
+def normalize_image2(img):
+    image = img[:,:,0]+ img[:,:,1]+ img[:,:,2]
+    image = (image - tf.reduce_min(image))/ (tf.reduce_max(image)- tf.reduce_min(image))
+    return image

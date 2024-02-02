@@ -28,11 +28,13 @@ def get_bottleneck_dataset(model, img_dir, img_size):
         # For each iteration append the bottleneck output as well as the label to the respective list
         # bottleneck_x_l -> list of tensors with dimension [1, bottleneck_size]
         # bottleneck_y_l -> list of tensors with dimension [1, num_labels]
-
+        x_i, y_i = next(train_img_gen)
+        bottleneck_x_l.append(model(x_i))
+        bottleneck_y_l.append(y_i)
         ######### Your code ends here #########
 
-    bottleneck_ds = tf.data.Dataset.from_tensor_slices(
-        (np.vstack(bottleneck_x_l), np.vstack(bottleneck_y_l))
+        bottleneck_ds = tf.data.Dataset.from_tensor_slices(
+            (np.vstack(bottleneck_x_l), np.vstack(bottleneck_y_l))
     )
 
     return bottleneck_ds, train_img_gen.samples
@@ -69,7 +71,15 @@ def retrain(image_dir):
     #   2.4 Create a new model
     # 3. Define a loss and a evaluation metric
 
+    #size_bottleneck = list(bottleneck_train_ds.as_numpy_iterator())[0][0].shape
+    size_bottleneck = next(iter(bottleneck_train_ds))[0].shape
+    print("size of bottleneck tensor:", size_bottleneck)
+    retrain_model = tf.keras.Sequential([
+        tf.keras.layers.InputLayer(size_bottleneck),
+        tf.keras.layers.Dense(3, name="classifier")])
 
+    loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+    metric = tf.keras.metrics.BinaryAccuracy(name='accuracy')
 
     ######### Your code ends here #########
 
@@ -93,7 +103,12 @@ def retrain(image_dir):
     ######### Your code starts here #########
     # We now want to create the full model using the newly trained classifier
     # Use tensorflow keras Sequential to stack the base_model and the new layers
-
+    model = tf.keras.Sequential([
+        tf.keras.layers.InputLayer(input_shape=IMG_SHAPE),
+        base_model
+    ])
+    for layer in retrain_model.layers:
+        model.add(layer)
     ######### Your code ends here #########
 
     model.compile(loss=loss, metrics=[metric])
@@ -106,7 +121,7 @@ if __name__ == "__main__":
     writer = tf.summary.create_file_writer("retrain_logs")
     tf.summary.trace_on()
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image_dir", type=str)
+    parser.add_argument("--image_dir", type=str, default="./CS237B_HW1/Problem_2/datasets/train")
     FLAGS, _ = parser.parse_known_args()
     retrain(FLAGS.image_dir)
     with writer.as_default():
