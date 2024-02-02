@@ -12,7 +12,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
     assert X.ndim == 2 and U.ndim == 2 and Xp.ndim == 2
     sdim, adim = X.shape[-1], U.shape[-1]
 
-    @tf.function
+    #@tf.function
     def loss():
         batch_n = int(1e4)
         ridx = tf.random.uniform([batch_n], 0, X.shape[0], dtype=tf.int32)
@@ -25,7 +25,8 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
         U_all = tf.reshape(U_all, (-1, 1))
         Xp_all = tf.reshape(Xp_all, (-1, sdim))
         input = tf.concat([Xp_all, U_all], -1)
-        next_Q = tf.reduce_max(tf.reshape(Q_network(input), (-1, 4)), -1)
+        #next_Q = tf.reduce_max(tf.reshape(tf.stop_gradient(Q_network(input)), (-1, 4)), -1)
+        next_Q = tf.reduce_max(tf.reshape((Q_network(input)), (-1, 4)), -1)
         input = tf.concat([X_, U_], -1)
         Q = tf.reshape(Q_network(input), [-1])
 
@@ -37,10 +38,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
 
         # make sure to account for the reward, the terminal state and the
         # discount factor gam
-        if is_terminal_fn:
-            Q_target = reward_fn(X_, U_)    
-        else:
-            Q_target = reward_fn(X_, U_) + gam * next_Q 
+        Q_target = reward_fn(X_, U_) +  tf.cast(~is_terminal_fn(X_), tf.float32)*next_Q  # mask out terminal state 
         l = tf.reduce_mean(tf.square(Q_target-Q))
 
         ######### Your code ends here ###########
@@ -110,9 +108,9 @@ def main():
             # remember that tf.random.categorical takes in the log of
             # probabilities, not the probabilities themselves
 
-            xp = tf.random.categorical(tf.expand_dims(tf.math.log(Ts[u][x]), 0), 1)
-            #xp = tf.random.categorical(tf.expand_dims(tf.math.log(
-            #    tf.tensordot(tf.one_hot(x, sdim), Ts[u], 1)), 0), 1)
+            #xp = tf.random.categorical(tf.expand_dims(tf.math.log(Ts[u][x]), 0), 1)
+            xp = tf.random.categorical(tf.expand_dims(tf.math.log(
+                tf.tensordot(tf.one_hot(x, sdim), Ts[u], 1)), 0), 1)
 
             ######### Your code ends here ###########
 
@@ -143,11 +141,19 @@ def main():
     # it needs to take in 2 state + 1 action input (3 inputs)
     # it needs to output a single value (batch x 1 output) - the Q-value
     # it should have 3 dense layers with a width of 64 (two hidden 64 neuron embeddings)
-    Q_network = tf.keras.Sequential()
-    Q_network.add(tf.keras.Input(shape=(3,)))
-    Q_network.add(tf.keras.layers.Dense(64, activation='relu'))
-    Q_network.add(tf.keras.layers.Dense(64, activation='relu'))
-    Q_network.add(tf.keras.layers.Dense(1))
+    # Q_network = tf.keras.Sequential()
+    # Q_network.add(tf.keras.Input(shape=(3,)))
+    # Q_network.add(tf.keras.layers.Dense(64, activation='relu'))
+    # Q_network.add(tf.keras.layers.Dense(64, activation='relu'))
+    # Q_network.add(tf.keras.layers.Dense(1, activation='softmax'))
+
+    Q_network = tf.keras.Sequential([
+        tf.keras.Input(shape=(3,)),
+        tf.keras.layers.Dense(64, activation='relu'),
+        tf.keras.layers.Dense(64, activation='relu'),
+        tf.keras.layers.Dense(1)
+    ])
+
 
     ######### Your code ends here ###########
 
