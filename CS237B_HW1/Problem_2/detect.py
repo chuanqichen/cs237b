@@ -168,7 +168,7 @@ def plot_classification(image_path, classification_array):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", type=str, default="./datasets/catswithdogs/002034.jpg")
-    parser.add_argument("--scheme", type=str, default="conv")
+    parser.add_argument("--scheme", type=str, default="saliency")
     FLAGS, _ = parser.parse_known_args()
     maybe_makedirs("../plots")
 

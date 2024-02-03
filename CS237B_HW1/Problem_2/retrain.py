@@ -121,7 +121,7 @@ if __name__ == "__main__":
     writer = tf.summary.create_file_writer("retrain_logs")
     tf.summary.trace_on()
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image_dir", type=str, default="./CS237B_HW1/Problem_2/datasets/train")
+    parser.add_argument("--image_dir", type=str, default="./datasets/train")
     FLAGS, _ = parser.parse_known_args()
     retrain(FLAGS.image_dir)
     with writer.as_default():
