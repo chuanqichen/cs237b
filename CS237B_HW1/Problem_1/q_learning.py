@@ -178,7 +178,7 @@ def main():
     plt.figure(120)
     visualize_value_function(V.numpy().reshape((n, n)))
     plt.colorbar()
-    plt.savefig("../plots\ql_120.png")
+    plt.savefig("..\plots\ql_120.png")
     plt.show()
     ########################################################
 
