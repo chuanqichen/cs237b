@@ -40,7 +40,7 @@ def classify(model, test_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--test_image_dir", type=str, default="./CS237B_HW1/Problem_2/datasets/test/")
+    parser.add_argument("--test_image_dir", type=str, default="./datasets/test/")
     FLAGS, _ = parser.parse_known_args()
     model = tf.keras.models.load_model("./trained_models/trained.h5")
     classify(model, FLAGS.test_image_dir)

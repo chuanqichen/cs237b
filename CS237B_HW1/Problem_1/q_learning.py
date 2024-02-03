@@ -38,7 +38,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
 
         # make sure to account for the reward, the terminal state and the
         # discount factor gam
-        Q_target = reward_fn(X_, U_) +  tf.cast(~is_terminal_fn(X_), tf.float32)*next_Q  # mask out terminal state 
+        Q_target = reward_fn(X_, U_) + gam*tf.cast(~is_terminal_fn(X_), tf.float32)*next_Q  # mask out terminal state 
         l = tf.reduce_mean(tf.square(Q_target-Q))
 
         ######### Your code ends here ###########
