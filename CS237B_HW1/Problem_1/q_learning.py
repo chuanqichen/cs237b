@@ -38,7 +38,8 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
 
         # make sure to account for the reward, the terminal state and the
         # discount factor gam
-        Q_target = reward_fn(X_, U_) + gam*tf.cast(~is_terminal_fn(X_), tf.float32)*next_Q  # mask out terminal state 
+        is_not_terminal = tf.cast(tf.math.logical_not(is_terminal_fn(X_)), tf.float32)
+        Q_target = reward_fn(X_, U_) + gam*is_not_terminal*next_Q  # mask out terminal state 
         l = tf.reduce_mean(tf.square(Q_target-Q))
 
         ######### Your code ends here ###########
@@ -50,7 +51,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
     ######### Your code starts here #########
     # create the Adam optimizer with tensorflow keras
     # experiment with different learning rates [1e-4, 1e-3, 1e-2, 1e-1]
-    learning_rate = 1e-2
+    learning_rate = 1e-3
     if platform.system() == "Darwin" and platform.processor() == "arm":
         opt = tf.keras.optimizers.legacy.Adam(learning_rate=learning_rate)
     else:
@@ -107,8 +108,9 @@ def main():
             # remember that transition matrices have a shape [sdim, sdim]
             # remember that tf.random.categorical takes in the log of
             # probabilities, not the probabilities themselves
-            prob_xp = tf.linalg.matvec(tf.transpose(Ts[u]), tf.one_hot(x, sdim))
-            xp = tf.random.categorical(tf.expand_dims(prob_xp, 0), 1)
+            #prob_xp = tf.linalg.matvec(tf.transpose(Ts[u]), tf.one_hot(x, sdim))
+            #xp = tf.random.categorical(tf.expand_dims(prob_xp, 0), 1)
+            xp = tf.random.categorical(tf.expand_dims(tf.math.log(Ts[u][:, x]), 0), 1)
             ######### Your code ends here ###########
 
             # convert integer states to a 2D representation using idx2pos
