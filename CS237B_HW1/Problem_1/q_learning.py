@@ -12,7 +12,7 @@ def Q_learning(Q_network, reward_fn, is_terminal_fn, X, U, Xp, gam):
     assert X.ndim == 2 and U.ndim == 2 and Xp.ndim == 2
     sdim, adim = X.shape[-1], U.shape[-1]
 
-    #@tf.function
+    @tf.function
     def loss():
         batch_n = int(1e4)
         ridx = tf.random.uniform([batch_n], 0, X.shape[0], dtype=tf.int32)
@@ -107,11 +107,8 @@ def main():
             # remember that transition matrices have a shape [sdim, sdim]
             # remember that tf.random.categorical takes in the log of
             # probabilities, not the probabilities themselves
-
-            #xp = tf.random.categorical(tf.expand_dims(tf.math.log(Ts[u][x]), 0), 1)
-            xp = tf.random.categorical(tf.expand_dims(tf.math.log(
-                tf.tensordot(tf.one_hot(x, sdim), Ts[u], 1)), 0), 1)
-
+            prob_xp = tf.linalg.matvec(tf.transpose(Ts[u]), tf.one_hot(x, sdim))
+            xp = tf.random.categorical(tf.expand_dims(prob_xp, 0), 1)
             ######### Your code ends here ###########
 
             # convert integer states to a 2D representation using idx2pos
@@ -141,12 +138,6 @@ def main():
     # it needs to take in 2 state + 1 action input (3 inputs)
     # it needs to output a single value (batch x 1 output) - the Q-value
     # it should have 3 dense layers with a width of 64 (two hidden 64 neuron embeddings)
-    # Q_network = tf.keras.Sequential()
-    # Q_network.add(tf.keras.Input(shape=(3,)))
-    # Q_network.add(tf.keras.layers.Dense(64, activation='relu'))
-    # Q_network.add(tf.keras.layers.Dense(64, activation='relu'))
-    # Q_network.add(tf.keras.layers.Dense(1, activation='softmax'))
-
     Q_network = tf.keras.Sequential([
         tf.keras.Input(shape=(3,)),
         tf.keras.layers.Dense(64, activation='relu'),
