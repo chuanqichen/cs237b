@@ -33,9 +33,8 @@ def wrench(f, p):
     """
     ########## Your code starts here ##########
     # Hint: you may find cross_matrix(x) defined above helpful. This should be one line of code.
-
+    w = np.hstack([f, cross_matrix(p).dot(f)])
     ########## Your code ends here ##########
-
     return w
 
 def cone_edges(f, mu):
@@ -62,16 +61,39 @@ def cone_edges(f, mu):
     D = f.shape[0]
     if D == 2:
         ########## Your code starts here ##########
-        edges = [np.zeros(D)] * 2
+        #edges = [np.zeros(D)] * 2
+        edges = []
+        for force in f:
+            if ((force - force[::-1]*mu) !=0).all(): 
+                edges.append(force - force[::-1]*mu)
+                edges.append(force + force[::-1]*mu)
+            else:
+                edges.append(force)
 
         ########## Your code ends here ##########
 
     # Spatial wrenches
     elif D == 3:
         ########## Your code starts here ##########
-        edges = [np.zeros(D)] * 4
+        #edges = [np.zeros(D)] * 4
+        edges = []
+        for force in f:
+            n = np.array([force[1], -force[0], 0])
+            friction1 = n*mu
+            if (friction1 != 0.).all():
+                edges.append(force - friction1)
+                edges.append(force + friction1)
+            else:
+                edges.append(force)
+            #friction2 = cross_matrix(force).dot(n)*mu
+            n = np.array([0, -force[2], force[1]])
+            friction2 = n*mu
+            if (friction2 != 0.).all():
+                edges.append(force + friction2)
+                edges.append(force - friction2)
+            else:
+                edges.append(force)
 
-        
         ########## Your code ends here ##########
 
     else:
@@ -94,10 +116,14 @@ def form_closure_program(F):
     # Hint: you may find np.linalg.matrix_rank(F) helpful
     # TODO: Replace the following program (check the cvxpy documentation)
 
-    # k = cp.Variable(1)
-    # objective = cp.Minimize(k)
-    # constraints = [k >= 0]
+    r = np.linalg.matrix_rank(F)    
+    D = len(F)
+    if r < D: 
+        return False;
 
+    k = cp.Variable(D, nonneg=True)
+    constraints = [k>=1, k@np.array(F)==0]
+    objective = cp.Minimize(np.linalg.norm(np.array(F), axis=1).max())
 
     ########## Your code ends here ##########
 
@@ -120,8 +146,11 @@ def is_in_form_closure(normals, points):
     """
     ########## Your code starts here ##########
     # TODO: Construct the F matrix (not necessarily 6 x 7)
-    F = np.zeros((6,7))
-
+    F = []
+    for normal, point in zip(normals, points):
+        f = wrench(normal, point)
+        F.append(f)
+    #F = np.array(F)
 
     ########## Your code ends here ##########
 
@@ -142,8 +171,15 @@ def is_in_force_closure(forces, points, friction_coeffs):
     """
     ########## Your code starts here ##########
     # TODO: Call cone_edges() to construct the F matrix (not necessarily 6 x 7)
-    F = np.zeros((6,7))    
+    #F = np.zeros((6,7))    
+    F = cone_edges(np.array(forces), friction_coeffs)
 
+    W = []
+    for normal, point in zip(F, points):
+        w = wrench(normal, point)
+        W.append(w)
+
+    F = W
 
     ########## Your code ends here ##########
 
