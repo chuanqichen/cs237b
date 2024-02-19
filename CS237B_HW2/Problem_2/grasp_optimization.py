@@ -62,16 +62,47 @@ def grasp_optimization(grasp_normals, points, friction_coeffs, wrench_ext):
     transformations = [compute_local_transformation(n) for n in grasp_normals]
 
     ########## Your code starts here ##########
+    n = D*M+1
+    x = cp.Variable(n)
+    h  = np.hstack([ np.zeros(n-1) , 1])
+    g = -wrench_ext
+    F = np.hstack([   
+        np.vstack([transformations[i], cross_matrix(points[i]).dot(transformations[i]) ])  for i in range(M)
+    ])
+    F = np.hstack((F,np.zeros([F.shape[0],1], F.dtype)))
+
     As = []
     bs = []
     cs = []
     ds = []
 
+    # rewrite the objective to SOCP with constraints part 
+    for i in range(M):
+        A = np.zeros([D, n])
+        A[0:D, i*D:(i+1)*D] = np.identity(D)
+        As.append(A)
+        bs.append(np.zeros(D))
+        c = np.hstack([np.zeros(n-1), 1])
+        cs.append(c)
+        ds.append(0)
+
+    # rewrite friction cone constraints
+    for i in range(M):
+        A = np.zeros([D, n])
+        Ai = np.identity(D)
+        Ai[D-1, D-1] = 0
+        A[0:D, i*D:(i+1)*D] = Ai
+        As.append(A)
+        bs.append(np.zeros(D))
+        c = np.zeros(n)
+        c[(i+1)*D-1] = friction_coeffs[i]
+        cs.append(c)
+        ds.append(0)
 
     x = solve_socp(x, As, bs, cs, ds, F, g, h, verbose=False)
 
     # TODO: extract the grasp forces from x as a stacked 1D vector
-
+    f = x[0:n-1]  # remove the last design variable s 
     ########## Your code ends here ##########
 
     # Transform the forces to the global frame

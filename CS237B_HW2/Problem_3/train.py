@@ -44,7 +44,7 @@ if __name__ == '__main__':
                                                      period=5)
 
     # Tensorboard callback
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir='train_logs', update_freq='batch')
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir='train_logs_physical', update_freq='batch')
 
     model.summary()
 

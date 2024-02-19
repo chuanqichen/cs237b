@@ -123,7 +123,8 @@ def form_closure_program(F):
 
     k = cp.Variable(D, nonneg=True)
     constraints = [k>=1, k@np.array(F)==0]
-    objective = cp.Minimize(np.linalg.norm(np.array(F), axis=1).max())
+    #objective = cp.Minimize(np.linalg.norm(np.array(F), axis=1).max())
+    objective = cp.Minimize(np.ones(D)@k)
 
     ########## Your code ends here ##########
 

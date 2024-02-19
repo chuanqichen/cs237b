@@ -23,7 +23,9 @@ class AccelerationLaw(tf.keras.layers.Layer):
         mu, th = inputs
 
         ########## Your code starts here ##########
-        a = None  # TODO
+        # TODO
+        #a = None 
+        a = self.g *(tf.sin(th)-mu*tf.cos(th))
         ########## Your code ends here ##########
 
         # Ensure output acceleration is positive
@@ -58,9 +60,21 @@ def build_model():
     ########## Your code starts here ##########
     # TODO: Create your neural network and replace the following two layers
     #       according to the given specification.
+    #p_class = tf.keras.layers.Dense(1, name='p_class')(img_input)
+    #mu = tf.keras.layers.Dense(1, name='mu')(p_class)
+    base_model = tf.keras.applications.InceptionV3(
+        input_shape=(DIM_IMG[1], DIM_IMG[0], 3),
+        include_top=False,
+        pooling="avg",
+        weights="imagenet",
+    )
 
-    p_class = tf.keras.layers.Dense(1, name='p_class')(img_input)
-    mu = tf.keras.layers.Dense(1, name='mu')(p_class)
+    base_model.summary()
+    base_model.compile(loss="mse")
+
+    out = base_model(img_input)
+    p_class = tf.keras.layers.Dense(32, activation='softmax', name='p_class')(out)
+    mu = tf.keras.layers.Dense(1, use_bias=False, name='mu')(p_class)
 
     ########## Your code ends here ##########
 
@@ -89,7 +103,19 @@ def build_baseline_model():
 
     ########## Your code starts here ##########
     # TODO: Replace the following with your model from build_model().
+    base_model = tf.keras.applications.InceptionV3(
+        input_shape=(DIM_IMG[1], DIM_IMG[0], 3),
+        include_top=False,
+        pooling="avg",
+        weights="imagenet",
+    )
 
+    base_model.summary()
+    base_model.compile(loss="mse")
+
+    out = base_model(img_input)
+
+    a_pred = tf.keras.layers.Dense(1)(out)
     ########## Your code ends here ##########
 
     return tf.keras.Model(inputs=[img_input, th_input], outputs=[a_pred])
@@ -100,7 +126,7 @@ def loss(a_actual, a_pred):
     """
 
     ########## Your code starts here ##########
-    l = None  # TODO
+    l = tf.nn.l2_loss(a_actual-a_pred)  # TODO
     ########## Your code ends here ##########
 
     return l
