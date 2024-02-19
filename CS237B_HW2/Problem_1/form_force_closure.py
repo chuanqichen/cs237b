@@ -101,7 +101,7 @@ def cone_edges(f, mu):
 
     return edges
 
-def form_closure_program(F):
+def form_closure_program(F, form_closure=True):
     """
     Solves a linear program to determine whether the given contact wrenches
     are in form closure.
@@ -117,14 +117,16 @@ def form_closure_program(F):
     # TODO: Replace the following program (check the cvxpy documentation)
 
     r = np.linalg.matrix_rank(F)    
-    D = len(F)
+    D = F.shape[0]
+    j = F.shape[1]
     if r < D: 
         return False;
 
-    k = cp.Variable(D, nonneg=True)
-    constraints = [k>=1, k@np.array(F)==0]
-    #objective = cp.Minimize(np.linalg.norm(np.array(F), axis=1).max())
-    objective = cp.Minimize(np.ones(D)@k)
+    k = cp.Variable(j, pos=True)
+    constraints = [F@k==0]
+    if( form_closure ):
+        constraints.append(k>=1)
+    objective = cp.Minimize(np.ones(j)@k)
 
     ########## Your code ends here ##########
 
@@ -151,8 +153,7 @@ def is_in_form_closure(normals, points):
     for normal, point in zip(normals, points):
         f = wrench(normal, point)
         F.append(f)
-    #F = np.array(F)
-
+    F= np.stack(F).T
     ########## Your code ends here ##########
 
     return form_closure_program(F)
@@ -180,8 +181,8 @@ def is_in_force_closure(forces, points, friction_coeffs):
         w = wrench(normal, point)
         W.append(w)
 
-    F = W
+    F = np.stack(W).T
 
     ########## Your code ends here ##########
 
-    return form_closure_program(F)
+    return form_closure_program(F, form_closure=False)
