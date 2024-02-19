@@ -64,7 +64,7 @@ def cone_edges(f, mu):
         #edges = [np.zeros(D)] * 2
         edges = []
         for force in f:
-            if ((force - force[::-1]*mu) !=0).all(): 
+            if (( force[::-1]*mu) !=0).all(): 
                 edges.append(force - force[::-1]*mu)
                 edges.append(force + force[::-1]*mu)
             else:
