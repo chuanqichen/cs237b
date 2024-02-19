@@ -135,6 +135,13 @@ def precompute_force_closure(grasp_normals, points, friction_coeffs):
     #       captured by the returned force_closure() function.
     F = np.zeros((2*N, M*D))
 
+    for i in range(N):
+        wrench_ext_pos = np.zeros(N)
+        wrench_ext_pos[i] = 1
+        F[i*2, :] = np.array(grasp_optimization(grasp_normals, points, friction_coeffs, wrench_ext_pos)).reshape(-1)
+        wrench_ext_neg = np.zeros(N)
+        wrench_ext_neg[i] = -1
+        F[i*2+1, :] = np.array(grasp_optimization(grasp_normals, points, friction_coeffs, wrench_ext_neg)).reshape(-1)
 
     ########## Your code ends here ##########
 
@@ -153,8 +160,11 @@ def precompute_force_closure(grasp_normals, points, friction_coeffs):
         ########## Your code starts here ##########
         # TODO: Compute the force closure forces as a stacked vector of shape (M*D)
         f = np.zeros(M*D)
-
-  
+        for i in range(N):
+            wrench_pos = max(0, wrench_ext[i])
+            wrench_neg = max(0, -wrench_ext[i])
+            f += wrench_pos*F[2*i];
+            f += wrench_neg*F[2*i+1];
         ########## Your code ends here ##########
 
         forces = [f_i for f_i in f.reshape(M,D)]
