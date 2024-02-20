@@ -33,7 +33,11 @@ def wrench(f, p):
     """
     ########## Your code starts here ##########
     # Hint: you may find cross_matrix(x) defined above helpful. This should be one line of code.
-    w = np.hstack([f, cross_matrix(p).dot(f)])
+    D = f.shape[0]
+    if D==2:
+        w = np.hstack([f, cross_matrix(p)[0].dot(f)])
+    else:
+        w = np.hstack([f, cross_matrix(p).dot(f)])
     ########## Your code ends here ##########
     return w
 
@@ -64,9 +68,11 @@ def cone_edges(f, mu):
         #edges = [np.zeros(D)] * 2
         edges = []
         for force in f:
-            if (( force[::-1]*mu) !=0).all(): 
-                edges.append(force - force[::-1]*mu)
-                edges.append(force + force[::-1]*mu)
+            if (( cross_matrix(force)*mu) !=0).any(): 
+                #edges.append(force - force[::-1]*mu)
+                #edges.append(force + force[::-1]*mu)
+                edges.append(force - cross_matrix(force)[0]*mu)
+                edges.append(force + cross_matrix(force)[0]*mu)
             else:
                 edges.append(force)
 
@@ -80,7 +86,7 @@ def cone_edges(f, mu):
         for force in f:
             n = np.array([force[1], -force[0], 0])
             friction1 = n*mu
-            if (friction1 != 0.).all():
+            if (friction1 != 0.).any():
                 edges.append(force - friction1)
                 edges.append(force + friction1)
             else:
