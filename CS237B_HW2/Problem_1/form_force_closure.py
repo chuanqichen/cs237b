@@ -65,16 +65,12 @@ def cone_edges(f, mu):
     D = f.shape[0]
     if D == 2:
         ########## Your code starts here ##########
-        #edges = [np.zeros(D)] * 2
         edges = []
-        for force in f:
-            if (( cross_matrix(force)*mu) !=0).any(): 
-                #edges.append(force - force[::-1]*mu)
-                #edges.append(force + force[::-1]*mu)
-                edges.append(force - cross_matrix(force)[0]*mu)
-                edges.append(force + cross_matrix(force)[0]*mu)
-            else:
-                edges.append(force)
+        if (( cross_matrix(f)*mu) !=0).any(): 
+            edges.append(f - cross_matrix(f)[0]*mu)
+            edges.append(f + cross_matrix(f)[0]*mu)
+        else:
+             edges.append(f)
 
         ########## Your code ends here ##########
 
@@ -83,22 +79,21 @@ def cone_edges(f, mu):
         ########## Your code starts here ##########
         #edges = [np.zeros(D)] * 4
         edges = []
-        for force in f:
-            n = np.array([force[1], -force[0], 0])
-            friction1 = n*mu
-            if (friction1 != 0.).any():
-                edges.append(force - friction1)
-                edges.append(force + friction1)
-            else:
-                edges.append(force)
+        n = np.array([f[1], -f[0], 0])
+        friction1 = n*mu
+        if (friction1 != 0.).any():
+            edges.append(f - friction1)
+            edges.append(f + friction1)
+        else:
+            edges.append(f)
             #friction2 = cross_matrix(force).dot(n)*mu
-            n = np.array([0, -force[2], force[1]])
-            friction2 = n*mu
-            if (friction2 != 0.).all():
-                edges.append(force + friction2)
-                edges.append(force - friction2)
-            else:
-                edges.append(force)
+        n = np.array([0, -f[2], f[1]])
+        friction2 = n*mu
+        if (friction2 != 0.).all():
+            edges.append(f + friction2)
+            edges.append(f - friction2)
+        else:
+            edges.append(f)
 
         ########## Your code ends here ##########
 
@@ -180,12 +175,12 @@ def is_in_force_closure(forces, points, friction_coeffs):
     ########## Your code starts here ##########
     # TODO: Call cone_edges() to construct the F matrix (not necessarily 6 x 7)
     #F = np.zeros((6,7))    
-    F = cone_edges(np.array(forces), friction_coeffs)
-
     W = []
-    for normal, point in zip(F, points):
-        w = wrench(normal, point)
-        W.append(w)
+    for force, point in zip(forces, points):
+        F = cone_edges(force, friction_coeffs)
+        for normal in F:
+            w = wrench(normal, point)
+            W.append(w)
 
     F = np.stack(W).T
 
