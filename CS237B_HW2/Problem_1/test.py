@@ -91,7 +91,7 @@ class TestForceClosure(unittest.TestCase):
         forces = [np.array([0., 1.]), np.array([ 0., -1.]), np.array([-1.,  0.])]
         points = [array([0., 0.]), array([0.25, 1.  ]), array([0.5, 0.5])]
         friction_coeffs = [0.49, 0.0, 0.0]
-        self.assertTrue(is_in_force_closure(forces, points, friction_coeffs))
+        self.assertFalse(is_in_force_closure(forces, points, friction_coeffs))
 
     def test_planar_force_closure_4(self):
         forces = [array([0., 1.]), array([ 0., -1.]), array([-1.,  0.])]

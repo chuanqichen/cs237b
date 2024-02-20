@@ -66,11 +66,19 @@ def cone_edges(f, mu):
     if D == 2:
         ########## Your code starts here ##########
         edges = []
-        if (( cross_matrix(f)[0]*mu) !=0).any(): 
-            edges.append(f - cross_matrix(f)[0]*mu)
-            edges.append(f + cross_matrix(f)[0]*mu)
+        edges = []
+        if f[1] != 0 and f[0]==0: 
+            edges.append(f + np.array([1, 0])*mu*np.linalg.norm(f))
+            edges.append(f + np.array([-1, 0])*mu*np.linalg.norm(f))
+        elif f[0] !=0 and f[1]==0:
+            edges.append(f + np.array([0, 1, ])*mu*np.linalg.norm(f))
+            edges.append(f + np.array([0, -1])*mu*np.linalg.norm(f))
         else:
-             edges.append(f)
+            if (( cross_matrix(f)[0]*mu) !=0).any(): 
+                edges.append(f - cross_matrix(f)[0]*mu)
+                edges.append(f + cross_matrix(f)[0]*mu)
+            else:
+                edges.append(f)
 
         ########## Your code ends here ##########
 
@@ -79,21 +87,36 @@ def cone_edges(f, mu):
         ########## Your code starts here ##########
         #edges = [np.zeros(D)] * 4
         edges = []
-        n = np.array([f[1], -f[0], 0])/np.linalg.norm(f)
-        friction1 = n*mu
-        if (friction1 != 0.).any():
-            edges.append(f - friction1)
-            edges.append(f + friction1)
+        if f[2] != 0 and f[0] == 0 and f[1] == 0: 
+            edges.append(f + np.array([1, 0, 0])*mu*np.linalg.norm(f))
+            edges.append(f + np.array([-1, 0, 0])*mu*np.linalg.norm(f))
+            edges.append(f + np.array([0, 1, 0])*mu*np.linalg.norm(f))
+            edges.append(f + np.array([0, -1, 0])*mu*np.linalg.norm(f))
+        elif f[1] != 0 and f[0] == 0 and f[2] == 0: 
+            edges.append(f + np.array([1, 0, 0])*mu*np.linalg.norm(f))
+            edges.append(f + np.array([-1, 0, 0])*mu*np.linalg.norm(f))
+            edges.append(f + np.array([0, 0, 1])*mu*np.linalg.norm(f))
+            edges.append(f + np.array([0, 0, -1])*mu*np.linalg.norm(f))
+        elif f[0] !=0 and f[1] == 0 and f[2] == 0: 
+            edges.append(f + np.array([0, 1, 0])*mu*np.linalg.norm(f))
+            edges.append(f + np.array([0, -1, 0])*mu*np.linalg.norm(f))
+            edges.append(f + np.array([0, 0, 1])*mu*np.linalg.norm(f))
+            edges.append(f + np.array([0, 0, -1])*mu*np.linalg.norm(f))            
         else:
-            edges.append(f)
-        friction2 = cross_matrix(f).dot(n)*mu
-        #n = np.array([0, -f[2], f[1]])
-        #friction2 = n*mu
-        if (friction2 != 0.).all():
-            edges.append(f + friction2)
-            edges.append(f - friction2)
-        else:
-            edges.append(f)
+            n = np.array([f[1], -f[0], 0])/np.linalg.norm(f)
+            friction1 = n*mu
+            if (friction1 != 0.).any():
+                edges.append(f - friction1)
+                edges.append(f + friction1)
+            else:
+                edges.append(f)
+            friction2 = cross_matrix(f).dot(n)*mu
+            if (friction2 != 0.).all():
+                edges.append(f + friction2)
+                edges.append(f - friction2)
+            else:
+                edges.append(f)
+
 
         ########## Your code ends here ##########
 
@@ -102,7 +125,7 @@ def cone_edges(f, mu):
 
     return edges
 
-def form_closure_program(F, form_closure=True):
+def form_closure_program(F):
     """
     Solves a linear program to determine whether the given contact wrenches
     are in form closure.
@@ -125,8 +148,7 @@ def form_closure_program(F, form_closure=True):
 
     k = cp.Variable(j, pos=True)
     constraints = [F@k==0]
-    if( form_closure ):
-        constraints.append(k>=1)
+    constraints.append(k>=1)
     objective = cp.Minimize(np.ones(j)@k)
 
     ########## Your code ends here ##########
@@ -189,4 +211,4 @@ def is_in_force_closure(forces, points, friction_coeffs):
 
     ########## Your code ends here ##########
 
-    return form_closure_program(F, form_closure=False)
+    return form_closure_program(F)
