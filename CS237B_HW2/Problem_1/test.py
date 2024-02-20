@@ -3,6 +3,7 @@
 import unittest
 
 from form_force_closure import *
+from numpy import array
 
 class TestFormClosure(unittest.TestCase):
 
@@ -85,6 +86,18 @@ class TestForceClosure(unittest.TestCase):
                   np.array([1., 0.])]
         friction_coeffs = [1., 1.]
         self.assertTrue(is_in_force_closure(forces, points, friction_coeffs))
+
+    def test_planar_force_closure_3(self):
+        forces = [np.array([0., 1.]), np.array([ 0., -1.]), np.array([-1.,  0.])]
+        points = [array([0., 0.]), array([0.25, 1.  ]), array([0.5, 0.5])]
+        friction_coeffs = [0.49, 0.0, 0.0]
+        self.assertTrue(is_in_force_closure(forces, points, friction_coeffs))
+
+    def test_planar_force_closure_4(self):
+        forces = [array([0., 1.]), array([ 0., -1.]), array([-1.,  0.])]
+        points = [array([0., 0.]), array([0.25, 1.  ]), array([0.5, 0.5])]
+        friction_coeffs = [0.51, 0.0, 0.0]
+        self.assertTrue(is_in_force_closure(forces, points, friction_coeffs))  # not sure
 
     def test_spatial_force_closure_3(self):
         # Grasping a cube
