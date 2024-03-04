@@ -1,0 +1,6 @@
+python test_il.py --scenario intersection --goal straight  
+Success Rate = 1.0
+python test_il.py --scenario intersection --goal right 
+Success Rate = 0.67
+python test_il.py --scenario intersection --goal left 
+Success Rate = 0.86

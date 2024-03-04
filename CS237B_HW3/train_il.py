@@ -48,14 +48,7 @@ def loss(y_est, y, goal):
     # - y is the actions the expert took for the corresponding batch of observations
     # At the end your code should return the scalar loss value.
     # HINT: Remember, you can penalize steering (0th dimension) and throttle (1st dimension) unequally
-    if(goal=="left"):
-        #weight_steering = 20.0
-        weight_steering = 5
-    elif (goal=="right"):
-        #weight_steering = 35
-        weight_steering = 3
-    else:
-        weight_steering = 10
+    weight_steering = 10
     weight_throttle = 1.0
     _loss = tf.reduce_sum(tf.reduce_mean(tf.math.square(y_est - y), axis=0)*(tf.convert_to_tensor([weight_steering, weight_throttle])))
 
