@@ -19,9 +19,15 @@ class NN(tf.keras.Model):
         #         - tf.keras.initializers.GlorotUniform (this is what we tried)
         #         - tf.keras.initializers.GlorotNormal
         #         - tf.keras.initializers.he_uniform or tf.keras.initializers.he_normal
-        
-        
-        
+        self.out_size = out_size
+        l1_l2 = tf.keras.regularizers.l1_l2(l1=0.01, l2=0.001)
+        self.dense1 = tf.keras.layers.Dense(250, activation=tf.nn.leaky_relu, kernel_regularizer=l1_l2, bias_regularizer=l1_l2,kernel_initializer=tf.keras.initializers.GlorotUniform())
+        self.dropout1 = tf.keras.layers.Dropout(0.25)
+        self.dense2 = tf.keras.layers.Dense(50, activation=tf.nn.leaky_relu, kernel_regularizer=l1_l2, bias_regularizer=l1_l2, kernel_initializer=tf.keras.initializers.GlorotUniform())
+        self.dropout2 = tf.keras.layers.Dropout(0.25)
+        self.dense3 = tf.keras.layers.Dense(out_size, kernel_regularizer=l1_l2, bias_regularizer=l1_l2, kernel_initializer=tf.keras.initializers.GlorotUniform())
+        self.dense4 = tf.keras.layers.Dense(out_size*out_size, kernel_regularizer=l1_l2, bias_regularizer=l1_l2, kernel_initializer=tf.keras.initializers.GlorotUniform())
+
         ########## Your code ends here ##########
 
     def call(self, x):
@@ -30,9 +36,16 @@ class NN(tf.keras.Model):
         # We want to perform a forward-pass of the network. Using the weights and biases, this function should give the network output for x where:
         # x is a (?, |O|) tensor that keeps a batch of observations
         # IMPORTANT: First two columns of the output tensor must correspond to the mean vector!
-        
-        
-        
+        out = self.dense1(x)
+        out = self.dropout1(out)
+        out = self.dense2(out)
+        out = self.dropout2(out)
+        mu = self.dense3(out)        
+        A = tf.reshape(self.dense4(out), [-1, self.out_size, self.out_size]) 
+        covar = tf.einsum('ijk, kli->ijl', A, tf.transpose(A))   # Sigma = A A.T => PSD 
+        covar += tf.convert_to_tensor([[1e-2, 0], [0, 1e-2]])      # impove numerical stability 
+        covar = tf.reshape(covar, [-1, 4])
+        return tf.concat([mu, covar], -1)
         ########## Your code ends here ##########
 
 
@@ -46,9 +59,13 @@ def loss(y_est, y):
     # At the end your code should return the scalar loss value.
     # HINT: You may find the classes of tensorflow_probability.distributions (imported as tfd) useful.
     #       In particular, you can use MultivariateNormalFullCovariance or MultivariateNormalTriL, but they are not the only way.
+    mu = y_est[:, 0:2]
+    covar = tf.reshape(y_est[:, 2:6], [-1, 2, 2])
+    # mvn = tfd.MultivariateNormalFullCovariance(loc=mu, covariance_matrix=covar)
+    mvn = tfd.MultivariateNormalTriL(loc=mu, scale_tril=tf.linalg.cholesky(covar))
+    _loss  = -tf.reduce_mean(mvn.log_prob(y), axis=0)
     
-    
-    
+    return _loss
     ########## Your code ends here ##########
 
 
@@ -79,8 +96,12 @@ def nn(data, args):
         # 4. Run an optimization step on the weights.
         # Helpful Functions: tf.GradientTape(), tf.GradientTape.gradient(), tf.keras.Optimizer.apply_gradients
        
-       
-       
+        with tf.GradientTape() as tape:
+            y_est = nn_model(x)
+            current_loss = loss(y_est, y) +  tf.add_n(nn_model.losses)
+        grads = tape.gradient(current_loss, nn_model.trainable_variables)
+        optimizer.apply_gradients(zip(grads, nn_model.trainable_variables))
+              
         ########## Your code ends here ##########
 
         train_loss(current_loss)
