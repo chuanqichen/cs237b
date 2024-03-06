@@ -17,7 +17,15 @@ class NN(tf.keras.Model):
         #         - tf.keras.initializers.GlorotUniform (this is what we tried)
         #         - tf.keras.initializers.GlorotNormal
         #         - tf.keras.initializers.he_uniform or tf.keras.initializers.he_normal
-        
+        l1_l2 = tf.keras.regularizers.l1_l2(l1=0.01, l2=0.001)
+        self.dense1 = tf.keras.layers.Dense(250, activation=tf.nn.leaky_relu, kernel_regularizer=l1_l2, bias_regularizer=l1_l2,kernel_initializer=tf.keras.initializers.GlorotUniform())
+        self.dropout1 = tf.keras.layers.Dropout(0.25)
+        self.dense2s =[tf.keras.layers.Dense(50, activation=tf.nn.leaky_relu, kernel_regularizer=l1_l2, bias_regularizer=l1_l2, kernel_initializer=tf.keras.initializers.GlorotUniform())
+                       for _ in range(3)]
+                       
+        self.dropout2 = tf.keras.layers.Dropout(0.25)
+        self.dense3s = [tf.keras.layers.Dense(out_size, kernel_regularizer=l1_l2, bias_regularizer=l1_l2, kernel_initializer=tf.keras.initializers.GlorotUniform())
+                       for _ in range(3)]
         
         
         ########## Your code ends here ##########
@@ -32,9 +40,13 @@ class NN(tf.keras.Model):
         # FYI: For the intersection scenario, u=0 means the goal is to turn left, u=1 straight, and u=2 right. 
         # HINT 1: Looping over all data samples may not be the most computationally efficient way of doing branching
         # HINT 2: While implementing this, we found tf.math.equal and tf.cast useful. This is not necessarily a requirement though.
-        
-
-
+        out = self.dense1(x)
+        out = self.dropout1(out)
+        goal_masks = tf.convert_to_tensor([tf.cast(tf.equal(u, i), tf.float32) for i in range(3)])
+        out = goal_masks[0]*self.dense2s[0](out) + goal_masks[1]*self.dense2s[1](out) + goal_masks[2]*self.dense2s[2](out)
+        out = self.dropout2(out)
+        out = goal_masks[0]*self.dense3s[0](out) + goal_masks[1]*self.dense3s[1](out) + goal_masks[2]*self.dense3s[2](out)
+        return out
         ########## Your code ends here ##########
 
 
@@ -47,8 +59,11 @@ def loss(y_est, y):
     # At the end your code should return the scalar loss value.
     # HINT: Remember, you can penalize steering (0th dimension) and throttle (1st dimension) unequally
 
+    weight_steering = 10
+    weight_throttle = 1.0
+    _loss = tf.reduce_sum(tf.reduce_mean(tf.math.square(y_est - y), axis=0)*(tf.convert_to_tensor([weight_steering, weight_throttle])))
 
-
+    return _loss; 
     ########## Your code ends here ##########
    
 
@@ -78,9 +93,13 @@ def nn(data, args):
         # 3. Based on the loss calculate the gradient for all weights
         # 4. Run an optimization step on the weights.
         # Helpful Functions: tf.GradientTape(), tf.GradientTape.gradient(), tf.keras.Optimizer.apply_gradients
-        
-        
 
+        with tf.GradientTape() as tape:
+            y_est = nn_model(x, u)
+            current_loss = loss(y_est, y) +  tf.add_n(nn_model.losses)
+        grads = tape.gradient(current_loss, nn_model.trainable_variables)
+        optimizer.apply_gradients(zip(grads, nn_model.trainable_variables))
+        
         ########## Your code ends here ##########
 
         train_loss(current_loss)

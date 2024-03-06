@@ -37,13 +37,13 @@ class NN(tf.keras.Model):
         # x is a (?, |O|) tensor that keeps a batch of observations
         # IMPORTANT: First two columns of the output tensor must correspond to the mean vector!
         out = self.dense1(x)
-        out = self.dropout1(out)
+        #out = self.dropout1(out)
         out = self.dense2(out)
-        out = self.dropout2(out)
+        #out = self.dropout2(out)
         mu = self.dense3(out)        
         A = tf.reshape(self.dense4(out), [-1, self.out_size, self.out_size]) 
-        covar = tf.einsum('ijk, kli->ijl', A, tf.transpose(A))   # Sigma = A A.T => PSD 
-        covar += tf.convert_to_tensor([[1e-2, 0], [0, 1e-2]])      # impove numerical stability 
+        covar = tf.einsum('nik, kjn->nij', A, tf.transpose(A))   # Sigma = A A.T => PSD 
+        covar += tf.convert_to_tensor([[1e-3, 0], [0, 1e-3]])      # impove numerical stability 
         covar = tf.reshape(covar, [-1, 4])
         return tf.concat([mu, covar], -1)
         ########## Your code ends here ##########
@@ -98,7 +98,7 @@ def nn(data, args):
        
         with tf.GradientTape() as tape:
             y_est = nn_model(x)
-            current_loss = loss(y_est, y) +  tf.add_n(nn_model.losses)
+            current_loss = loss(y_est, y) #+  tf.add_n(nn_model.losses)
         grads = tape.gradient(current_loss, nn_model.trainable_variables)
         optimizer.apply_gradients(zip(grads, nn_model.trainable_variables))
               
