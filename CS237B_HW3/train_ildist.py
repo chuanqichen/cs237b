@@ -128,7 +128,7 @@ def nn(data, args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--goal', type=str, help="left, straight, right, inner, outer, all", default="all")
-    parser.add_argument('--scenario', type=str, help="intersection, circularroad", default="intersection")
+    parser.add_argument('--scenario', type=str, help="intersection, circularroad, lanechange", default="intersection")
     parser.add_argument("--epochs", type=int, help="number of epochs for training", default=1000)
     parser.add_argument("--lr", type=float, help="learning rate for Adam optimizer", default=1e-3)
     parser.add_argument("--restore", action="store_true", default=False)

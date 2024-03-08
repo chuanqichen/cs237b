@@ -8,6 +8,7 @@ from gym_carlo.envs.interactive_controllers import KeyboardController
 from scipy.stats import multivariate_normal
 from train_ildist import NN
 from utils import *
+import tensorflow as tf
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -56,7 +57,14 @@ if __name__ == '__main__':
             # - action (1 x 2 numpy array) is the current action the user took when the observation is obs
             # The code should set a variable called "probs" which is list keeping the probabilities associated with goals[scenario_name], respectively.
             # HINT: multivariate_normal from scipy.stats might be useful, which is already imported. Or you can implement it yourself, too.
-
+            probs = []
+            for goal in goals[scenario_name]:
+                model = nn_models[goal]
+                mean_cov_p_a_cond_og = model(obs)
+                mean = mean_cov_p_a_cond_og[0, 0:2]
+                cov = tf.reshape(mean_cov_p_a_cond_og[0, 2:], (2, 2))
+                prob = multivariate_normal.pdf(action, mean, cov)
+                probs.append(prob)
 
             ########## Your code ends here ##########
             
