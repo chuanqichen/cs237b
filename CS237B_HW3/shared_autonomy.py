@@ -8,6 +8,7 @@ from gym_carlo.envs.interactive_controllers import KeyboardController
 from scipy.stats import multivariate_normal
 from train_ildist import NN
 from utils import *
+import tensorflow as tf
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -58,8 +59,17 @@ if __name__ == '__main__':
             # - max_steering and max_throttle are the constraints, i.e. np.abs(a_robot[0]) <= max_steering and np.abs(a_robot[1]) <= max_throttle must be satisfied.
             # At the end, your code should set a_robot variable as a 1x2 numpy array that consists of steering and throttle values, respectively
             # HINT: You can use np.clip to threshold a_robot with respect to the magnitude constraints
-
-
+            P_g = tf.reduce_mean(scores, axis=0)
+            means_a_human = [] 
+            for goal in goals[scenario_name]:
+                model = nn_models[goal]
+                mean_cov_p_a_cond_og = model(obs)
+                mean = mean_cov_p_a_cond_og[0, 0:2]
+                means_a_human.append(mean)
+            means_a_human = tf.convert_to_tensor(means_a_human, dtype=tf.float64)
+            m_go = tf.convert_to_tensor([optimal_action[goal] for goal in goals[scenario_name]])  # optimal action GxO->A
+            a_robot = tf.reduce_sum(P_g*(tf.squeeze(m_go, axis=1)-means_a_human), axis=0)
+            a_robot = np.clip(a_robot,a_min=[-max_steering, 0], a_max=[max_steering, max_throttle] )
 
             ########## Your code ends here ##########
             
@@ -76,7 +86,16 @@ if __name__ == '__main__':
             # At the end, your code should set probs variable as a 1 x |G| numpy array that consists of the probability of each goal under obs and a_human
             # HINT: This should be very similar to the part in intent_inference.py 
 
+            probs = []
+            for goal in goals[scenario_name]:
+                model = nn_models[goal]
+                mean_cov_p_a_cond_og = model(obs)
+                mean = mean_cov_p_a_cond_og[0, 0:2]
+                cov = tf.reshape(mean_cov_p_a_cond_og[0, 2:], (2, 2))
+                prob = multivariate_normal.pdf(a_human, mean, cov)
+                probs.append(prob)
 
+            probs = np.array(probs)
 
             ########## Your code ends here ##########
 
