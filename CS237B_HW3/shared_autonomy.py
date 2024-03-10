@@ -67,8 +67,9 @@ if __name__ == '__main__':
                 mean = mean_cov_p_a_cond_og[0, 0:2]
                 means_a_human.append(mean)
             means_a_human = tf.convert_to_tensor(means_a_human, dtype=tf.float64)
-            m_go = tf.convert_to_tensor([optimal_action[goal] for goal in goals[scenario_name]])  # optimal action GxO->A
-            a_robot = tf.reduce_sum(P_g*(tf.squeeze(m_go, axis=1)-means_a_human), axis=0)
+            m_go = [optimal_action[goal] for goal in goals[scenario_name]]  # optimal action GxO->A
+            m_go = tf.squeeze(tf.convert_to_tensor(m_go), axis=1)
+            a_robot = tf.linalg.matvec(m_go-means_a_human, P_g, transpose_a=True)
             a_robot = np.clip(a_robot,a_min=[-max_steering, 0], a_max=[max_steering, max_throttle] )
 
             ########## Your code ends here ##########
@@ -96,6 +97,7 @@ if __name__ == '__main__':
                 probs.append(prob)
 
             probs = np.array(probs)
+            probs /=np.sum(probs)
 
             ########## Your code ends here ##########
 

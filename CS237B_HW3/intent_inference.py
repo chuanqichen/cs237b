@@ -66,6 +66,7 @@ if __name__ == '__main__':
                 prob = multivariate_normal.pdf(action, mean, cov)
                 probs.append(prob)
 
+            probs /=np.sum(probs)
             ########## Your code ends here ##########
             
             
